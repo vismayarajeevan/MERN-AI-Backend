@@ -78,4 +78,35 @@ async function registerUser(req, res) {
   }
 }
 
-module.exports = { registerUser };
+// verify otp
+
+// Verify OTP
+async function verifyOTP(req, res) {
+    try {
+      const { email, otp } = req.body;
+  
+      const user = await userModel.findOne({ email });
+      if (!user) return res.status(404).json({ message: 'User not found' });
+  
+      if (user.otp !== otp) {
+        return res.status(400).json({ message: 'Invalid OTP' });
+      }
+  
+      
+  
+      // Mark user as verified
+      user.verified = true;
+      user.otp = '';
+       
+      await user.save();
+  
+      res.status(200).json({ message: 'User verified successfully' });
+    } catch (error) {
+      console.error('Error during OTP verification:', error);
+      res.status(500).json({ message: 'Failed to verify OTP' });
+    }
+  }
+
+
+
+module.exports = { registerUser,verifyOTP };
