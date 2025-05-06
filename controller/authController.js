@@ -1,6 +1,7 @@
 const userModel = require('../model/user')
 const nodemailer = require('nodemailer')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 
 // nodemailer setup
@@ -108,5 +109,45 @@ async function verifyOTP(req, res) {
   }
 
 
+  
+  async function login(req, res) {
+    try {
+      const { email, password } = req.body;
+  
+      // Find the user by email
+      const loginUser = await userModel.findOne({ email });
+  
+      if (!loginUser || !loginUser.verified) {
+        return res.status(401).json({ message: "User not found or not verified" });
+      }
+  
+      // Compare the password using bcrypt
+      const isPasswordMatch = await bcrypt.compare(password, loginUser.password);
+  
+      if (!isPasswordMatch) {
+        return res.status(401).json({ message: "Incorrect password" });
+      }
+  
+      // Generate JWT
+      const token = jwt.sign(
+        { id: loginUser._id },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: '7d' }
+      );
+  
+      res.status(200).json({
+        message: "Login successful",
+        token,
+        userId: loginUser._id,
+      });
+  
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ message: "Failed to log in" });
+    }
+  }
+  
 
-module.exports = { registerUser,verifyOTP };
+
+
+module.exports = { registerUser,verifyOTP,login };
